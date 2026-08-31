@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<title>錯題更正小冊子產生器 — 老師使用說明</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--blue:#1c4e80;--line:#d7dce3;--ink:#1f2933;--muted:#6b7684;--warnbg:#fff8e1;--warn:#8a6100}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:#eef1f5;color:var(--ink);
+  font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.8}
+header{background:var(--blue);color:#fff;padding:26px 20px}
+header h1{margin:0;font-size:22px}
+header p{margin:6px 0 0;font-size:14px;opacity:.9}
+main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+nav{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:16px 0}
+nav a{display:inline-block;margin:3px 10px 3px 0;color:var(--blue);text-decoration:none;font-size:14px}
+section{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px 20px;margin-bottom:16px}
+h2{font-size:18px;color:var(--blue);margin:0 0 10px;border-bottom:2px solid var(--blue);padding-bottom:6px}
+h3{font-size:15px;margin:18px 0 6px}
+ol,ul{padding-left:22px;margin:8px 0}
+li{margin:5px 0}
+code{background:#eef3f9;padding:1px 5px;border-radius:3px;font-size:.92em}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+th{background:#f4f7fb}
+.box{background:#eef3fb;border:2px solid var(--blue);border-radius:6px;padding:12px 14px;margin:12px 0}
+.warn{background:var(--warnbg);border:1px solid #f0dfa8;border-radius:6px;padding:12px 14px;margin:12px 0;color:var(--warn)}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps>li{counter-increment:s;position:relative;padding:8px 0 8px 40px;border-bottom:1px dashed var(--line)}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:8px;width:26px;height:26px;border-radius:50%;
+  background:var(--blue);color:#fff;text-align:center;line-height:26px;font-weight:700;font-size:14px}
+.kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 6px;font-size:.9em;background:#fafbfc}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 16px 40px}
+@media print{
+  body{background:#fff}
+  header{background:#fff;color:#000;border-bottom:2px solid #000}
+  nav{display:none}
+  section{border:0;padding:0 0 10px;break-inside:avoid}
+  @page{size:A4;margin:1.6cm}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>錯題更正小冊子產生器 — 老師使用說明</h1>
+  <p>把 AI 整理好的錯題，排版成可列印的 A4 小冊子 PDF。不用安裝軟件、不用懂 LaTeX、不用註冊。</p>
+</header>
+
+<main>
+<nav>
+  <a href="#quick">五步驟速查</a>
+  <a href="#need">開始之前</a>
+  <a href="#ai">向 AI 取得內容</a>
+  <a href="#edit">填封面與改字</a>
+  <a href="#break">控制換頁</a>
+  <a href="#print">存成 PDF</a>
+  <a href="#ios">iPhone／iPad</a>
+  <a href="#msg">訊息代表什麼</a>
+  <a href="#faq">常見問題</a>
+</nav>
+
+<section id="quick">
+  <h2>五步驟速查</h2>
+  <ol class="steps">
+    <li>在網頁按「<b>複製 Prompt（Claude）</b>」或「<b>（Gemini）</b>」——用哪個 AI 就按哪一顆。</li>
+    <li>貼進 AI 送出，再給它學生的錯題（<b>可以直接拍照上傳</b>），每次 3–5 題最理想。</li>
+    <li>AI 會回一大段以 <code>{</code> 開頭的文字，<b>整段複製</b>貼回網頁，按「載入並排版」。</li>
+    <li>填封面欄位、點字改錯、決定哪裡換頁。改動後記得按「<b>重新分頁</b>」。</li>
+    <li>按「<b>列印／另存為 PDF</b>」，依畫面指示設定後儲存。</li>
+  </ol>
+  <div class="box">最後別忘記按「<b>下載 JSON</b>」存檔。下次要補印或修改，把它貼回網頁即可，不必再麻煩 AI。</div>
+</section>
+
+<section id="need">
+  <h2>開始之前</h2>
+  <table>
+    <tr><th>項目</th><th>要求</th></tr>
+    <tr><td>裝置</td><td>電腦最順（<b>Chrome</b> 或 Edge）；iPhone／iPad 可用，見下方專節</td></tr>
+    <tr><td>網絡</td><td>需要連線（字型與排版引擎由網上載入）</td></tr>
+    <tr><td>AI</td><td>Claude 或 Gemini，免費版即可</td></tr>
+    <tr><td>紙張</td><td>A4</td></tr>
+  </table>
+  <div class="warn">學生的錯題與姓名<b>全程留在你自己的瀏覽器內，不會上傳到任何伺服器</b>。但若你把錯題交給 AI 分析，那部分屬該 AI 平台的處理範圍，建議不要在對話中寫出學生全名。</div>
+</section>
+
+<section id="ai">
+  <h2>向 AI 取得內容</h2>
+  <h3>第一步：複製 Prompt</h3>
+  <p>兩顆按鈕的內容<b>不一樣</b>，按錯會令 AI 輸出格式不符。貼進 AI 送出後，它會回你一句「我已準備好！請提供學生的錯題資料……」。</p>
+  <h3>第二步：提供錯題</h3>
+  <ul>
+    <li><b>打字</b>：例如「中三數學。學生把 3x+5=20 解成 x=8.33，他把 5 移到右邊時沒有變號。」</li>
+    <li><b>拍照</b>：直接把學生答錯那一頁拍照上傳。</li>
+  </ul>
+  <p>請一併告訴 AI <b>科目與年級</b>（中二、中四…），否則用詞深淺可能不合。每次 3–5 題，上限 12 題；題目越少，錯誤分析越細緻。</p>
+  <h3>第三步：貼回網頁</h3>
+  <p>AI 有時會多寫「這是你的 JSON：」或用 ``` 包起來，<b>不用理它，直接整段貼上</b>。網頁會自動清理，並在訊息區列出它修正了什麼。</p>
+</section>
+
+<section id="edit">
+  <h2>填封面與改字</h2>
+  <p><b>封面欄位</b>：學校名稱、班別、學生姓名、科目、授課老師、日期。需要時可勾選加入學號、課題／單元、評估名稱、<b>家長簽署欄</b>。</p>
+  <p><b>改字</b>：在右邊排好的頁面上點一下，即可修改該段文字。含數式的段落會彈出小視窗，讓你改原始寫法（例如把 <code>$3x+5=20$</code> 改成 <code>$3x-5=20$</code>），儲存後公式自動重畫。</p>
+  <div class="warn">改動後左上狀態燈會變<b>橙色</b>：請先按「<b>重新分頁</b>」再列印。若直接列印，每頁會印上「草稿：尚未重新分頁」水印，提醒你別誤發給學生。</div>
+</section>
+
+<section id="break">
+  <h2>控制換頁（很實用）</h2>
+  <p>頁面段落之間有虛線小鈕「<b>⤓ 在此分頁</b>」，點一下就在該處強制換頁；已設定的顯示「<b>✂ 已分頁（點擊取消）</b>」。三個常用做法：</p>
+  <table>
+    <tr><th>位置</th><th>效果</th></tr>
+    <tr><td><b>原題目</b>之後</td><td>題目在正面、解答在背面，學生無法偷看答案</td></tr>
+    <tr><td><b>總分</b>之後</td><td>延伸問題單獨成頁，可當隨堂練習</td></tr>
+    <tr><td><b>延伸問題</b>之後</td><td>補一頁空白給學生手寫訂正</td></tr>
+  </table>
+  <p>嫌頁數太多，可選「<b>省紙精簡版</b>」（連續排版、不強制每題一頁），你手動設定的分頁仍然保留。</p>
+</section>
+
+<section id="print">
+  <h2>存成 PDF（電腦 Chrome）</h2>
+  <p>按「列印／另存為 PDF」後，在 Chrome 的列印視窗設定四項：</p>
+  <table>
+    <tr><th>設定</th><th>必須選</th><th>選錯會怎樣</th></tr>
+    <tr><td>目的地</td><td><b>另存為 PDF</b></td><td>—</td></tr>
+    <tr><td>邊界</td><td><b>預設</b></td><td>選「無」或「自訂」會令版面比例錯亂</td></tr>
+    <tr><td>頁首及頁尾</td><td><b>取消勾選</b></td><td>多印一組網址、日期與重複頁碼</td></tr>
+    <tr><td>背景圖形</td><td><b>勾選</b></td><td>藍色方框沒有底色</td></tr>
+  </table>
+  <p>後兩項在「<b>更多設定</b>」裡面。</p>
+  <div class="box"><b>第一次使用請先按「列印校準頁」</b>：只印一張 A4，上面有邊界尺、藍框樣本、字形檢查與清單，設定有沒有錯一眼看得出。設定好後 Chrome 會記住。</div>
+</section>
+
+<section id="ios">
+  <h2>iPhone／iPad 使用方式</h2>
+  <p>網頁在手機上會自動切換成<b>兩個分頁</b>的介面：</p>
+  <ol>
+    <li><b>「① 設定與輸入」</b>：複製 Prompt、貼上 JSON、填封面欄位</li>
+    <li><b>「② 預覽與列印」</b>：看排好的頁面、改字、設定換頁、列印</li>
+  </ol>
+  <p>排版完成後會自動跳到預覽分頁，並把 A4 頁面<b>縮放至符合螢幕寬度</b>；上方有縮放按鈕。<b>螢幕縮放不會影響 PDF</b>，輸出永遠是原尺寸 A4。</p>
+  <h3>存成 PDF 的步驟</h3>
+  <ol class="steps">
+    <li>按「列印／另存為 PDF」，或用 Safari 的<b>分享 → 列印</b></li>
+    <li>在列印預覽的縮圖上<b>用兩指向外撥開</b>（pinch-out），畫面會變成完整 PDF</li>
+    <li>按<b>右上角分享圖示 → 儲存到檔案</b></li>
+  </ol>
+  <h3>手機上的差異</h3>
+  <ul>
+    <li>改字一律用<b>彈出視窗</b>編輯（直接在頁面打字在手機太容易誤觸）。</li>
+    <li>分頁小鈕會<b>常駐顯示</b>並加大，方便手指點按。</li>
+    <li>「下載 JSON」會改用<b>分享表單</b>，選「儲存到檔案」。</li>
+    <li>iPhone 的列印介面沒有「背景圖形」開關，一般會自動印出藍框底色。</li>
+    <li>題數多時分頁較慢屬正常，建議一次 3–5 題。</li>
+  </ul>
+  <div class="warn">若要大量列印或精細對版，仍建議用電腦 Chrome：列印設定較完整，也較快。</div>
+</section>
+
+<section id="msg">
+  <h2>網頁上的訊息代表什麼</h2>
+  <table>
+    <tr><th>顏色</th><th>意思</th><th>你要做什麼</th></tr>
+    <tr><td>藍色</td><td>進度或自動修正報告</td><td>不用理</td></tr>
+    <tr><td><b>黃色</b></td><td>網頁替你做了決定（例：配分加總與總分不一致，已用加總）</td><td>看一眼，通常沒問題</td></tr>
+    <tr><td><b>紅色</b></td><td>資料缺漏，無法排版</td><td>按「<b>複製修正指令</b>」，貼回 AI，它會只重出那一題</td></tr>
+  </table>
+</section>
+
+<section id="faq">
+  <h2>常見問題</h2>
+  <table>
+    <tr><th>情況</th><th>處理</th></tr>
+    <tr><td>「超過單本上限 12 題」</td><td>按「載入第 1／2 本」等按鈕，自動分成兩本</td></tr>
+    <tr><td>「以下 3 個字不在字型範圍」</td><td>多為冷僻姓名字，會以另一種字體顯示，不影響列印</td></tr>
+    <tr><td>「未能載入港標楷書」</td><td>學校網絡阻擋了字型來源。可改用手機熱點；或照樣使用，只是字形變成系統預設</td></tr>
+    <tr><td>狀態燈橙色時按 <span class="kbd">Ctrl</span>+<span class="kbd">P</span></td><td>會被擋住並提示先重新分頁</td></tr>
+    <tr><td>「此瀏覽器不允許自動複製」</td><td>網頁會彈出文字框，長按全選後手動複製</td></tr>
+    <tr><td>無法解析 JSON</td><td>通常是只複製了一半。回 AI 重新輸出，整段再複製一次</td></tr>
+    <tr><td>學校電腦關閉「另存為 PDF」</td><td>此情況無法使用，請改用其他電腦或家中裝置</td></tr>
+  </table>
+</section>
+
+<footer>
+  本工具製作：Gu Richard Run Feng｜字型：自由香港楷書 Free HK Kai 4700（CC BY-SA 4.0，自由香港字型）｜排版：Paged.js（MIT）｜公式：KaTeX（MIT）
+</footer>
+</main>
+</body>
+</html>
