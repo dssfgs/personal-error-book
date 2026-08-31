@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<title>個人專屬錯題更正小冊子 — 產生器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- 港標字型：自由香港楷書 Free HK Kai 4700（v1.02, CC BY-SA 4.0） -->
+<link rel="preconnect" href="https://fontsapi.zeoseven.com" crossorigin>
+<style>@import url("https://fontsapi.zeoseven.com/80/main/result.css");</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://unpkg.com/pagedjs@0.4.3/dist/paged.js"></script>
+
+<style>
+:root{
+  --line:#d7dce3; --ink:#1f2933; --muted:#6b7684; --blue:#1c4e80;
+  --warn:#8a6100; --warnbg:#fff8e1; --err:#9b1c1c; --errbg:#fdeaea;
+  --ok:#1b5e20; --okbg:#eaf5ea;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:#eef1f5}
+#mobileTabs{display:none;position:sticky;top:0;z-index:60;background:#fff;border-bottom:1px solid var(--line)}
+#mobileTabs button{flex:1;border:0;border-radius:0;padding:13px 8px;font-weight:700;font-size:15px;background:#fff;color:var(--blue)}
+#mobileTabs button.on{background:var(--blue);color:#fff}
+#app{display:grid;grid-template-columns:400px 1fr;min-height:100vh}
+#panel{background:#fff;border-right:1px solid var(--line);padding:16px;overflow-y:auto;max-height:100vh}
+#stage{padding:24px;overflow-y:auto;max-height:100vh}
+h1.app-title{font-size:17px;margin:0 0 4px}
+p.app-sub{font-size:12px;color:var(--muted);margin:0 0 14px}
+fieldset{border:1px solid var(--line);border-radius:6px;margin:0 0 12px;padding:10px}
+legend{font-size:12px;font-weight:700;color:var(--blue);padding:0 4px}
+label.f{display:block;font-size:12px;color:var(--muted);margin:6px 0 2px}
+input[type=text],textarea,select{width:100%;padding:8px;border:1px solid var(--line);border-radius:4px;font-size:16px;font-family:inherit}
+textarea#jsonInput{height:170px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.5}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+button{padding:9px 12px;border:1px solid var(--line);border-radius:5px;background:#fff;font-size:15px;cursor:pointer;font-family:inherit;touch-action:manipulation}
+button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+button:disabled{opacity:.45;cursor:not-allowed}
+.chk{display:flex;align-items:center;gap:8px;font-size:15px;margin:8px 0}
+.chk input{width:18px;height:18px}
+.tip{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6}
+#status{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;padding:9px 10px;border-radius:5px;margin-bottom:10px}
+#status .dot{width:9px;height:9px;border-radius:50%}
+#status.clean{background:var(--okbg);color:var(--ok)} #status.clean .dot{background:var(--ok)}
+#status.dirty{background:var(--warnbg);color:var(--warn)} #status.dirty .dot{background:var(--warn)}
+#status.paginating{background:#eaf0f8;color:var(--blue)} #status.paginating .dot{background:var(--blue)}
+.msg{font-size:13px;line-height:1.6;border-radius:5px;padding:9px 10px;margin:6px 0}
+.msg.e{background:var(--errbg);color:var(--err);border:1px solid #f3c2c2}
+.msg.w{background:var(--warnbg);color:var(--warn);border:1px solid #f0dfa8}
+.msg.i{background:#eef3f9;color:var(--blue);border:1px solid #cfdcec}
+.msg button{margin-top:6px;font-size:12px;padding:5px 8px}
+details.about{font-size:12px;color:var(--muted);line-height:1.6}
+details.about h4{margin:8px 0 2px;color:var(--ink);font-size:12px}
+.hint{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:14px;font-size:14px;line-height:1.8}
+.hint h3{margin:0 0 6px;font-size:15px;color:var(--blue)}
+.hint ol{margin:6px 0 0 18px;padding:0}
+.hint b{color:var(--err)}
+#hintIOS{display:none}
+.glyphtest{font-family:"Free HK Kai 4700","標楷體","DFKai-SB",serif;font-size:26px;letter-spacing:.15em;margin-top:6px}
+#previewWrap{overflow:hidden}
+#preview{background:#eef1f5}
+#zoombar{display:none;gap:6px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:8px}
+
+/* ================= 手機／平板（≤900px） ================= */
+@media (max-width:900px){
+  #mobileTabs{display:flex}
+  #app{grid-template-columns:1fr}
+  #panel{max-height:none;overflow:visible;border-right:0;border-bottom:1px solid var(--line);padding:12px}
+  #stage{max-height:none;overflow:visible;padding:12px}
+  body.tab-preview #panel{display:none}
+  body.tab-panel #stage{display:none}
+  #zoombar{display:flex}
+  textarea#jsonInput{height:130px}
+}
+
+@media print{
+  @page{ margin:0 }
+  #panel,.hint,#mobileTabs,#zoombar{display:none !important}
+  .ins{display:none !important}
+  #app{display:block} #stage{display:block !important;padding:0;max-height:none;overflow:visible}
+  #previewWrap{overflow:visible;height:auto !important}
+  #preview{transform:none !important}
+  body{background:#fff}
+  body.calib-mode #previewWrap{display:none}
+  body:not(.calib-mode) #calib{display:none}
+}
+#calib{display:none}
+body.calib-mode #calib{display:block}
+#calib .sheet{width:210mm;height:297mm;position:relative;background:#fff;margin:0 auto;font-family:"Free HK Kai 4700","標楷體",serif}
+#calib .inner{position:absolute;inset:20mm;border:1px dashed #999;padding:10mm}
+#calib .hdr{position:absolute;top:12mm;left:20mm;right:20mm;display:flex;justify-content:space-between;font-size:10pt;color:#333}
+#calib .box{border:2px solid #1c4e80;background:#eaf0f8;padding:8px;margin:10mm 0;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+#calib ol{font-size:11pt;line-height:1.9}
+</style>
+</head>
+<body class="tab-panel">
+
+<div id="mobileTabs">
+  <button id="tabPanel" class="on">① 設定與輸入</button>
+  <button id="tabPreview">② 預覽與列印</button>
+</div>
+
+<div id="app">
+<div id="panel">
+  <h1 class="app-title">錯題更正小冊子產生器</h1>
+  <p class="app-sub" id="appSub">港標楷體 · 繁體中文 · Chrome／Safari</p>
+
+  <div id="status" class="clean"><span class="dot"></span><span id="statusText">尚未載入資料</span></div>
+
+  <fieldset>
+    <legend>① 取得 Prompt（依你使用的 AI 選一顆）</legend>
+    <div class="row">
+      <button id="btnPromptClaude">複製 Prompt（Claude）</button>
+      <button id="btnPromptGemini">複製 Prompt（Gemini）</button>
+    </div>
+    <div class="tip">用哪個 AI 就按哪一顆，內容不同。若複製失敗（部分手機瀏覽器限制），會改為彈出文字讓你手動長按複製。</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>② 貼上 AI 產生的 JSON</legend>
+    <textarea id="jsonInput" placeholder='貼上 JSON。可直接含 ```json 圍籬或前後說明文字，本工具會自動修復。'></textarea>
+    <div class="row">
+      <button class="primary" id="btnLoad">載入並排版</button>
+      <button id="btnSample">載入範例</button>
+    </div>
+  </fieldset>
+
+  <div id="messages"></div>
+
+  <fieldset>
+    <legend>③ 封面欄位</legend>
+    <label class="f">學校名稱</label><input type="text" id="m_school" data-meta="學校名稱">
+    <label class="f">班別（例：3A／中三甲）</label><input type="text" id="m_class" data-meta="班別">
+    <label class="f">學生姓名</label><input type="text" id="m_name" data-meta="學生姓名">
+    <label class="f">科目</label><input type="text" id="m_subject" data-meta="科目">
+    <label class="f">授課老師</label><input type="text" id="m_teacher" data-meta="授課老師">
+    <label class="f">日期</label><input type="text" id="m_date" data-meta="日期">
+    <div class="tip">進階欄位（勾選後出現於封面）</div>
+    <div class="chk"><input type="checkbox" id="adv_id"><label for="adv_id">學號</label></div>
+    <div class="chk"><input type="checkbox" id="adv_unit"><label for="adv_unit">課題／單元</label></div>
+    <div class="chk"><input type="checkbox" id="adv_assess"><label for="adv_assess">評估名稱</label></div>
+    <div class="chk"><input type="checkbox" id="adv_parent"><label for="adv_parent">家長簽署欄（含日期）</label></div>
+    <label class="f">學號</label><input type="text" id="m_sid" data-meta="學號">
+    <label class="f">課題／單元</label><input type="text" id="m_unit" data-meta="課題">
+    <label class="f">評估名稱</label><input type="text" id="m_assess" data-meta="評估名稱">
+  </fieldset>
+
+  <fieldset>
+    <legend>④ 字型（港標字形驗證）</legend>
+    <div class="chk"><input type="checkbox" id="useLocalKai"><label for="useLocalKai">改用系統標楷體（台灣字形）</label></div>
+    <div class="glyphtest" id="glyphTest">裏　羣　峯　牀　肅　電</div>
+    <div class="tip">
+      港標：裏、羣、峯、牀、肅（下兩橫）、電（出頭）｜台標：裡、群、峰、床、肅（一橫）、電（不出頭）。<br>
+      <span id="fontState">字型狀態：載入中…</span>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>⑤ 版面與分頁</legend>
+    <div class="chk"><input type="radio" name="mode" id="mode_full" checked><label for="mode_full">完整小冊子（含封面目錄，每題獨立一頁）</label></div>
+    <div class="chk"><input type="radio" name="mode" id="mode_compact"><label for="mode_compact">省紙精簡版（連續排版）</label></div>
+    <div class="row">
+      <button id="btnShowIns">顯示／隱藏分頁按鈕</button>
+      <button id="btnClearIns">清除所有手動分頁</button>
+    </div>
+    <div class="tip"><b>手動分頁</b>：預覽中段落之間的「⤓ 在此分頁」按一下即強制換頁；已設定顯示「✂ 已分頁（點擊取消）」。設定會存進 JSON，下載後貼回可還原，省紙模式下仍生效。</div>
+  </fieldset>
+
+  <fieldset>
+    <legend>⑥ 輸出與保存</legend>
+    <div class="row">
+      <button class="primary" id="btnPrint">列印／另存為 PDF</button>
+      <button id="btnRepaginate">重新分頁</button>
+    </div>
+    <div class="row">
+      <button id="btnCalib">列印校準頁</button>
+      <button id="btnDownload">下載 JSON</button>
+      <button id="btnCopy">複製 JSON</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>關於／授權</legend>
+    <details class="about">
+      <summary>第三方資源與授權（不列印進學生 PDF）</summary>
+      <h4>中文字型</h4>
+      <b>自由香港楷書 Free HK Kai 4700</b>（v1.02）— <b>CC BY-SA 4.0</b>；版權：自由香港字型 freehkfonts.opensource.hk；上游：台灣全字庫正楷體。依香港教育局《香港小學學習字詞表》2007 年版書寫要求製作，現版收 4,762 字。本工具僅嵌入未修改之字型（未子集、未改字形、未更名）。
+      <h4>程式庫</h4>KaTeX（MIT）＋ mhchem、Paged.js（MIT）。
+      <h4>本工具</h4>原 LaTeX 錯題小冊子模板作者、需求提出者：Gu Richard Run Feng。內容生成模型：Claude 或 Gemini。
+    </details>
+  </fieldset>
+</div>
+
+<div id="stage">
+  <div class="hint" id="hintChrome">
+    <h3>列印三步驟（電腦 Chrome）</h3>
+    <ol>
+      <li>目的地選 <b>另存為 PDF</b></li>
+      <li><b>邊界選「預設」</b>（選「無」或「自訂」會令版面失效）</li>
+      <li>「更多設定」內：<b>取消「頁首及頁尾」</b>、<b>勾選「背景圖形」</b></li>
+    </ol>
+    首次使用請先按「列印校準頁」印一張 A4 自檢。
+  </div>
+
+  <div class="hint" id="hintIOS">
+    <h3>iPhone／iPad 存成 PDF</h3>
+    <ol>
+      <li>按下方 <b>「列印／另存為 PDF」</b>，或用 Safari 的<b>分享 → 列印</b></li>
+      <li>在列印預覽的縮圖上<b>用兩指向外撥開</b>（pinch-out），畫面會變成完整 PDF</li>
+      <li>按右上角<b>分享圖示 → 儲存到檔案</b></li>
+    </ol>
+    iPhone 螢幕較窄，預覽已自動縮放以符合寬度；<b>縮放只影響螢幕，不影響 PDF</b>。
+    小提示：先在「② 設定與輸入」貼好 JSON，再切到「② 預覽與列印」分頁操作。
+  </div>
+
+  <div id="zoombar">
+    <span>預覽縮放</span>
+    <button id="zoomOut">－</button><span id="zoomVal">100%</span><button id="zoomIn">＋</button>
+    <button id="zoomFit">符合寬度</button>
+  </div>
+
+  <div id="calib">
+    <div class="sheet">
+      <div class="hdr"><span>專屬錯題更正小冊子</span><span>1</span></div>
+      <div class="inner">
+        <p style="font-size:13pt;font-weight:700">列印校準頁</p>
+        <p style="font-size:11pt;line-height:1.8">虛線框應距紙邊 <b>2 公分</b>。若明顯不符，代表「邊界」未設為「預設」。</p>
+        <div class="box">這是藍框樣本：<b>邊框與底色都應該出現</b>。若只有邊框沒有底色，代表未勾選「背景圖形」（iPhone 一般會自動印出底色）。</div>
+        <ol>
+          <li>四邊留白約 2cm　→　邊界＝預設 ✔</li>
+          <li>藍框有淺藍底色 ✔</li>
+          <li>頁面上方只有一組「專屬錯題更正小冊子／頁碼」 ✔</li>
+          <li>字形檢查：裏　羣　峯　牀　肅　電（應為香港寫法）</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div id="previewWrap"><div id="preview"></div></div>
+</div>
+</div>
+
+<div id="source" style="display:none"></div>
+
+<script type="text/plain" id="prompt-claude">
+# 角色
+你是一位資深、嚴謹而熱心的專科老師，負責為香港中學生製作「錯題更正小冊子」的內容資料。
+
+# 輸出格式（最重要）
+只輸出「單一 JSON 物件」。不要加程式碼圍籬、不要任何說明文字、問候語或結語。
+第一個字元必須是 {，最後一個字元必須是 }。
+字串內的反斜線一律雙寫，例如分數要寫成 "$\\frac{1}{2}$"。
+數學式以 LaTeX 語法寫在字串內，並用 $...$ 包覆；化學式可用 \\ce{}。
+
+# JSON 結構
+{
+  "meta": { "科目": "", "年級": "", "學校名稱": "", "班別": "", "學生姓名": "", "授課老師": "", "日期": "" },
+  "主題": [
+    { "主題名稱": "精確的課題名稱（例：一元一次方程式）",
+      "題目": [
+        { "難度": "容易｜中等｜困難",
+          "原題目": "題目全文",
+          "錯誤分析": ["學生盲點一", "學生盲點二"],
+          "正確步驟": [ { "說明": "步驟說明", "配分": 2 } ],
+          "總分": 5,
+          "延伸問題": ["題一", "題二", "題三"] } ] } ]
+}
+
+# 內容規則
+1. 全部使用繁體中文（香港用語），語氣專業、客觀、具建設性且鼓勵。
+2. 每次處理 3–5 題，最多 12 題；不可遺漏任何一題。
+3. 依「課題」分類，使用標準學科名稱；同一課題內由易到難。
+4. 難度只能是「容易」「中等」「困難」三者之一。
+5. 錯誤分析要精準指出盲點、概念誤解與思考習慣問題，語氣正面。
+6. 正確步驟要清楚完整，每步給合理配分（總分＝各步配分加總）。
+7. 延伸問題固定 3 題，題型與結構與原題相同，只替換數字、係數或基本名詞，難度相同或略高，並確保答案整潔。
+8. 若題目不清、圖片無法辨識或資訊缺漏，先提問澄清，不要臆測。
+9. 不要輸出分頁相關欄位（分頁前／分頁點），分頁由老師在網頁上自行決定。
+
+# 初次互動
+若尚未收到錯題資料，只輸出這句話：
+我已準備好！請提供學生的錯題資料（每次最多 3–5 道）、科目與年級。您可以直接上傳圖片或輸入文字描述。
+</script>
+
+<script type="text/plain" id="prompt-gemini">
+<角色>
+你是一位資深、嚴謹而熱心的專科老師，任務是為香港中學生製作「錯題更正小冊子」的內容資料。你不需要排版，只需要輸出結構化資料。
+</角色>
+
+<輸出格式 重要性=最高>
+只輸出「單一 JSON 物件」。
+禁止輸出程式碼圍籬、禁止任何開場語、說明、結語或表情符號。
+第一個字元必須是 {，最後一個字元必須是 }。
+字串內的反斜線一律雙寫：分數必須寫成 "$\\frac{1}{2}$"，不可寫成 "$\frac{1}{2}$"。
+數學式用 LaTeX 寫在字串內並以 $...$ 包覆；化學式用 \\ce{...}。
+</輸出格式>
+
+<JSON結構>
+{
+  "meta": { "科目": "", "年級": "", "學校名稱": "", "班別": "", "學生姓名": "", "授課老師": "", "日期": "" },
+  "主題": [
+    { "主題名稱": "精確的課題名稱（例：一元一次方程式）",
+      "題目": [
+        { "難度": "容易｜中等｜困難",
+          "原題目": "題目全文",
+          "錯誤分析": ["學生盲點一", "學生盲點二"],
+          "正確步驟": [ { "說明": "步驟說明", "配分": 2 } ],
+          "總分": 5,
+          "延伸問題": ["題一", "題二", "題三"] } ] } ]
+}
+</JSON結構>
+
+<內容規則>
+1. 全部使用繁體中文（香港用語與課程術語），語氣專業、客觀、具建設性且鼓勵。請刻意寫得詳盡，不要為了簡潔而壓縮錯誤分析。
+2. 每次處理 3–5 題，最多 12 題；不可遺漏任何一題。
+3. 依「課題」分類，使用標準學科名稱；同一課題內由易到難。
+4. 難度只能是「容易」「中等」「困難」三者之一。
+5. 錯誤分析每題 2–3 條，精準指出盲點、概念誤解與思考習慣問題，語氣正面。
+6. 正確步驟每步一句話並給合理配分；總分必須等於各步配分加總。
+7. 延伸問題固定 3 題，題型與結構與原題完全相同，只替換數字、係數或基本名詞，難度相同或略高，並確保運算整潔、答案漂亮。
+8. 若題目不清、照片模糊或資訊缺漏，先提問澄清，不要臆測。
+9. 不要輸出分頁相關欄位（分頁前／分頁點），分頁由老師在網頁上自行決定。
+10. 不要輸出你的推理過程。
+</內容規則>
+
+<初次互動>
+若尚未收到錯題資料，只輸出這句話（此時不輸出 JSON）：
+我已準備好！請提供學生的錯題資料（每次最多 3–5 道）、科目與年級。您可以直接上傳圖片或輸入文字描述。
+</初次互動>
+
+【AI Studio／API 使用者】請把 <角色>、<輸出格式>、<內容規則> 放進 System instruction（不含 <初次互動>），
+並設 response_mime_type = application/json 與 response_schema。注意：schema 模式下無法輸出初始問候語。
+</script>
+
+<script type="text/plain" id="sample-json">
+{"meta":{"科目":"數學","年級":"中三","學校名稱":"","班別":"","學生姓名":"","授課老師":"","日期":""},"主題":[{"主題名稱":"一元一次方程式","題目":[{"難度":"容易","原題目":"解方程式 $3x + 5 = 20$。","錯誤分析":["移項時未同時改變正負號，把 $+5$ 搬到右邊後仍寫成 $+5$，得到 $3x = 25$。","對「等量公理」的理解停留在「移項變號」口訣，尚未連結到「等號兩邊做同樣的事」。"],"正確步驟":[{"說明":"兩邊同時減 $5$：$3x + 5 - 5 = 20 - 5$，得 $3x = 15$。","配分":2},{"說明":"兩邊同時除以 $3$：$x = \\frac{15}{3} = 5$。","配分":2},{"說明":"代回原式檢驗：$3(5) + 5 = 20$，等式成立。","配分":1}],"總分":5,"延伸問題":["解方程式 $4x + 7 = 31$。","解方程式 $5x - 8 = 27$。","解方程式 $2(x + 3) = 16$。"]},{"難度":"中等","原題目":"解方程式 $\\frac{2x - 1}{3} = \\frac{x + 4}{2}$。","錯誤分析":["交叉相乘時只乘了一邊的分子，寫成 $2(2x-1) = x+4$，漏乘右邊分母。","去分母後未加括號，$2x-1$ 的整體性被拆開，負號只作用在第一項。"],"正確步驟":[{"說明":"兩邊同乘 $6$（$3$ 與 $2$ 的最小公倍數）：$2(2x-1) = 3(x+4)$。","配分":2},{"說明":"展開括號：$4x - 2 = 3x + 12$。","配分":2},{"說明":"移項整理：$4x - 3x = 12 + 2$，得 $x = 14$。","配分":2},{"說明":"代回檢驗：左式 $= \\frac{27}{3} = 9$，右式 $= \\frac{18}{2} = 9$。","配分":1}],"總分":7,"延伸問題":["解方程式 $\\frac{3x - 2}{4} = \\frac{x + 6}{3}$。","解方程式 $\\frac{5x + 1}{6} = \\frac{2x + 7}{3}$。","解方程式 $\\frac{x - 3}{2} = \\frac{2x - 12}{5}$。"]}]},{"主題名稱":"二次函數的圖像與最值","題目":[{"難度":"困難","原題目":"已知二次函數 $y = 2x^{2} - 8x + 5$。求其頂點坐標，並說明該函數的最小值。","錯誤分析":["配方時忘記先提出首項係數 $2$，使頂點的 $x$ 坐標算成 $4$ 而非 $2$。","把「頂點的 $y$ 坐標」與「最小值」視為兩件事，未意識到開口向上時兩者相同。","檢驗習慣尚未建立：代入 $x = 2$ 驗算即可發現配方有誤。"],"正確步驟":[{"說明":"提出首項係數：$y = 2\\left(x^{2} - 4x\\right) + 5$。","配分":2},{"說明":"括號內配方：$x^{2} - 4x = (x-2)^{2} - 4$。","配分":2},{"說明":"代回整理：$y = 2(x-2)^{2} - 3$。","配分":2},{"說明":"由頂點式讀出頂點坐標為 $(2,\\ -3)$。","配分":2},{"說明":"因 $a = 2 > 0$，開口向上，故 $x = 2$ 時有最小值 $-3$。","配分":2}],"總分":10,"延伸問題":["已知 $y = 3x^{2} - 12x + 7$，求頂點坐標與最小值。","已知 $y = 2x^{2} + 12x + 13$，求頂點坐標與最小值。","已知 $y = -2x^{2} + 8x - 1$，求頂點坐標，並說明其為最大值或最小值。"]}]}]}
+</script>
+
+<script>
+/* 規格：v3.0（C-01～C-22）＋v3.1（C-23）＋v3.2（C-24）＋v3.3（港標 CDN）＋v3.5（行動裝置支援 C-25） */
+
+const DIFF = ['容易','中等','困難'];
+const DIFF_MAP = {'簡單':'容易','易':'容易','easy':'容易','中':'中等','普通':'中等','medium':'中等',
+                  '難':'困難','難度高':'困難','hard':'困難','difficult':'困難'};
+const LIMITS = { 題:12, 步:15, 題幹:800, 主題:8, 題軟:5 };
+const SLOTS = ['原題目','錯誤分析','步驟','總分','延伸問題'];
+const HK_FONT = 'Free HK Kai 4700';
+const COVERAGE_RANGES = [];
+
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_TOUCH = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+let MODEL = null, previewer = null, state = 'clean', lastCssUrl = null, showIns = true;
+let zoom = null;                       /* null = 自動符合寬度 */
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const raw = id => document.getElementById(id).textContent.trim();
+
+function msg(kind, html){
+  const d = document.createElement('div');
+  d.className = 'msg ' + kind; d.innerHTML = html;
+  $('#messages').appendChild(d); return d;
+}
+function clearMsg(){ $('#messages').innerHTML = ''; }
+
+function setState(s){
+  state = s;
+  $('#status').className = s;
+  $('#statusText').textContent =
+    s === 'clean' ? '已同步：可列印' :
+    s === 'dirty' ? '內容已修改，請重新分頁後再列印' : '正在分頁…';
+  document.body.classList.toggle('is-dirty', s === 'dirty');
+  $('#btnPrint').disabled = (s === 'paginating');
+  $('#btnRepaginate').disabled = (s === 'paginating');
+}
+
+/* ---------- 手機分頁切換 ---------- */
+function showTab(which){
+  document.body.classList.toggle('tab-panel', which === 'panel');
+  document.body.classList.toggle('tab-preview', which === 'preview');
+  $('#tabPanel').classList.toggle('on', which === 'panel');
+  $('#tabPreview').classList.toggle('on', which === 'preview');
+  if (which === 'preview') requestAnimationFrame(fitPreview);
+  window.scrollTo({ top: 0 });
+}
+$('#tabPanel').onclick = () => showTab('panel');
+$('#tabPreview').onclick = () => showTab('preview');
+
+/* ---------- 預覽縮放（只影響螢幕，不影響 PDF） ---------- */
+function fitPreview(){
+  const pv = $('#preview'), wrap = $('#previewWrap');
+  const pages = pv.querySelector('.pagedjs_pages');
+  if (!pages){ wrap.style.height = ''; return; }
+  pv.style.transform = 'none'; wrap.style.height = '';
+  const natW = pages.offsetWidth || 794, natH = pages.offsetHeight || 1123;
+  const avail = wrap.clientWidth - 4;
+  const k = zoom !== null ? zoom : Math.min(1, avail / natW);
+  pv.style.transformOrigin = 'top left';
+  pv.style.transform = `scale(${k})`;
+  wrap.style.height = (natH * k) + 'px';
+  $('#zoomVal').textContent = Math.round(k * 100) + '%';
+}
+$('#zoomIn').onclick  = () => { zoom = Math.min(2, (zoom ?? 1) + .1); fitPreview(); };
+$('#zoomOut').onclick = () => { zoom = Math.max(.25, (zoom ?? 1) - .1); fitPreview(); };
+$('#zoomFit').onclick = () => { zoom = null; fitPreview(); };
+window.addEventListener('resize', () => requestAnimationFrame(fitPreview));
+window.addEventListener('orientationchange', () => setTimeout(fitPreview, 300));
+
+/* ---------- 剪貼板（手機可能封鎖 → 退回手動複製） ---------- */
+async function copyText(text, okMsg){
+  try {
+    await navigator.clipboard.writeText(text);
+    msg('i', okMsg);
+  } catch(_) {
+    const d = msg('w', '此瀏覽器不允許自動複製，請長按下方文字全選後複製：');
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'width:100%;height:120px;margin-top:6px;font-size:13px';
+    d.appendChild(ta); ta.focus(); ta.select();
+  }
+}
+
+/* ============================================================ 字型就緒 */
+async function waitFonts(el){
+  if (!document.fonts) return 'no-api';
+  try {
+    const sample = (el ? el.textContent : document.body.textContent).slice(0, 3000);
+    await Promise.race([
+      Promise.all([document.fonts.load(`12pt "${HK_FONT}"`, sample), document.fonts.ready]),
+      new Promise(r => setTimeout(() => r('timeout'), 8000))
+    ]);
+    return document.fonts.check(`12pt "${HK_FONT}"`) ? 'ok' : 'fallback';
+  } catch(_) { return 'error'; }
+}
+function reportFontState(st){
+  const t = $('#fontState'); if (!t) return;
+  t.innerHTML = st === 'ok'
+    ? '字型狀態：<b style="color:#1b5e20">已載入自由香港楷書 v1.02（港標字形）</b>'
+    : '字型狀態：<b style="color:#8a6100">未能載入港標楷書，已回退系統字型</b>';
+}
+
+/* ============================================================ JSON 修復 */
+function repairLatexBackslashes(src){
+  let out = '', i = 0, fixed = 0;
+  while (i < src.length){
+    const c = src[i];
+    if (c !== '\\'){ out += c; i++; continue; }
+    const nx = src[i+1];
+    if (nx === undefined){ out += '\\\\'; fixed++; i++; continue; }
+    if (nx === '\\'){ out += '\\\\'; i += 2; continue; }
+    if (nx === '"' || nx === '/'){ out += c + nx; i += 2; continue; }
+    if (nx === 'u' && /^[0-9a-fA-F]{4}/.test(src.slice(i+2, i+6))){ out += src.slice(i, i+6); i += 6; continue; }
+    if (/[A-Za-z]/.test(nx)){
+      const run = src.slice(i+1).match(/^[A-Za-z]+/)[0];
+      if (run.length >= 2){ out += '\\\\' + run; fixed++; i += 1 + run.length; continue; }
+      if ('ntrbf'.includes(nx)){ out += c + nx; i += 2; continue; }
+    }
+    out += '\\\\'; fixed++; i++;
+  }
+  return { text: out, fixed };
+}
+function scanFix(src){
+  let out = '', inStr = false, escNext = false, fw = 0, nl = 0;
+  const FW = {'“':'"','”':'"','＂':'"','：':':','，':',','［':'[','］':']','｛':'{','｝':'}'};
+  for (let i = 0; i < src.length; i++){
+    const c = src[i];
+    if (inStr){
+      if (escNext){ out += c; escNext = false; continue; }
+      if (c === '\\'){ out += c; escNext = true; continue; }
+      if (c === '"'){ inStr = false; out += c; continue; }
+      if (c === '\n' || c === '\r'){ out += '\\n'; nl++; continue; }
+      out += c; continue;
+    }
+    if (c === '"'){ inStr = true; out += c; continue; }
+    if (FW[c] !== undefined){ out += FW[c]; fw++; continue; }
+    if (c === ',' && src.slice(i+1).match(/^\s*([}\]])/)) continue;
+    out += c;
+  }
+  return { text: out, fw, nl };
+}
+function repairJson(rawText){
+  const log = [];
+  let t = rawText.trim();
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence){ t = fence[1].trim(); log.push('E-01 已移除 ```json 程式碼圍籬'); }
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  const a2 = t.indexOf('['), b2 = t.lastIndexOf(']');
+  const useObj = a !== -1 && (a2 === -1 || a < a2);
+  const s = useObj ? a : a2, e = useObj ? b : b2;
+  if (s > 0 || (e !== -1 && e < t.length - 1)){ t = t.slice(s, e + 1); log.push('E-02 已移除 JSON 前後的說明文字'); }
+  let parsed = null;
+  try { parsed = JSON.parse(t); } catch(_) {}
+  if (!parsed){
+    const s1 = scanFix(t); t = s1.text;
+    if (s1.fw) log.push(`E-05 已將 ${s1.fw} 處結構位置的全形符號轉為半形`);
+    if (s1.nl) log.push(`E-07 已將 ${s1.nl} 處字串內換行轉為 \\n`);
+    log.push('E-03 已檢查並移除尾逗號');
+    try { parsed = JSON.parse(t); } catch(_) {}
+  }
+  if (!parsed){
+    const r = repairLatexBackslashes(t);
+    if (r.fixed){ t = r.text; log.push(`E-06 已修復 ${r.fixed} 處未轉義反斜線（LaTeX 指令）`); }
+    try { parsed = JSON.parse(t); } catch(_) {}
+  }
+  if (!parsed && /'\s*:/.test(t)){
+    t = t.replace(/'/g, '"'); log.push('E-04 已將單引號轉為雙引號');
+    try { parsed = JSON.parse(t); } catch(_) {}
+  }
+  return { parsed, log };
+}
+
+/* ============================================================ 驗證 */
+function normalizeMath(s){
+  return String(s ?? '')
+    .replace(/\\\((.+?)\\\)/gs, (_, x) => '$' + x + '$')
+    .replace(/\\\[(.+?)\\\]/gs, (_, x) => '$$' + x + '$$');
+}
+const toArr = v => Array.isArray(v) ? v : (v == null || v === '' ? [] : [v]);
+
+function validate(rawModel){
+  const errors = [], warns = [];
+  let model = rawModel;
+  if (Array.isArray(model)){
+    model = { meta:{}, 主題:[{ 主題名稱:'未分類', 題目: model }] };
+    warns.push('E-15 頂層是陣列，已包裝為「未分類」主題。');
+  }
+  model.meta = model.meta || {};
+  if (!Array.isArray(model.主題)){
+    errors.push('缺少「主題」陣列，或其格式不正確。');
+    return { errors, warns, model, total:0 };
+  }
+  if (model.主題.length > LIMITS.主題) errors.push(`共 ${model.主題.length} 個主題，超過上限 ${LIMITS.主題} 個。`);
+
+  let total = 0;
+  model.主題.forEach((t, ti) => {
+    const where = `第 ${ti+1} 個主題`;
+    if (!t.主題名稱){ errors.push(`${where}缺少「主題名稱」。`); t.主題名稱 = '未命名主題'; }
+    t.分頁前 = !!t.分頁前;
+    t.題目 = toArr(t.題目);
+    if (!t.題目.length) warns.push(`${where}「${t.主題名稱}」沒有任何題目。`);
+
+    t.題目.forEach((q, qi) => {
+      total++;
+      const w = `${where}「${t.主題名稱}」的第 ${qi+1} 題`;
+      q.分頁前 = !!q.分頁前;
+      q.分頁點 = toArr(q.分頁點).filter(x => SLOTS.includes(x));
+
+      if (!q.原題目) errors.push(`${w}缺少「原題目」欄位。請回 AI 補上該題，或自行填寫。`);
+      else if (String(q.原題目).length > LIMITS.題幹) errors.push(`${w}題幹 ${String(q.原題目).length} 字，超過上限 ${LIMITS.題幹} 字。`);
+      q.原題目 = normalizeMath(q.原題目);
+
+      if (!DIFF.includes(q.難度)){
+        const mapped = DIFF_MAP[String(q.難度 || '').toLowerCase()] || DIFF_MAP[q.難度];
+        if (mapped){ warns.push(`${w}難度「${q.難度}」已對應為「${mapped}」。`); q.難度 = mapped; }
+        else { errors.push(`${w}難度「${q.難度 ?? '（空白）'}」不是容易／中等／困難之一。`); q.難度 = '中等'; }
+      }
+
+      if (!Array.isArray(q.錯誤分析)){
+        if (q.錯誤分析) warns.push(`${w}「錯誤分析」是字串，已轉為單項清單。`);
+        else errors.push(`${w}缺少「錯誤分析」欄位。請回 AI 補上該題，或自行填寫。`);
+        q.錯誤分析 = toArr(q.錯誤分析);
+      }
+      q.錯誤分析 = q.錯誤分析.map(normalizeMath);
+
+      let steps = q.正確步驟;
+      if (!Array.isArray(steps)){
+        warns.push(`${w}「正確步驟」不是陣列，已包成單一步驟且配分以 0 計。`);
+        steps = toArr(steps).map(x => ({ 說明:x, 配分:0 }));
+      }
+      steps = steps.map((st, si) => {
+        if (typeof st === 'string'){ warns.push(`${w}第 ${si+1} 步為純字串，配分以 0 計。`); return { 說明:normalizeMath(st), 配分:0 }; }
+        let p = st.配分;
+        if (typeof p === 'string'){
+          const n = parseFloat(p.replace(/[^\d.]/g, ''));
+          warns.push(`${w}第 ${si+1} 步配分「${p}」已取數字 ${isNaN(n)?0:n}。`);
+          p = isNaN(n) ? 0 : n;
+        }
+        return { 說明: normalizeMath(st.說明), 配分: (typeof p === 'number' ? p : 0) };
+      });
+      if (steps.length > LIMITS.步) errors.push(`${w}共 ${steps.length} 個步驟，超過上限 ${LIMITS.步} 步。`);
+      q.正確步驟 = steps;
+
+      const sum = steps.reduce((acc, st) => acc + st.配分, 0);
+      if (typeof q.總分 === 'number' && q.總分 !== sum)
+        warns.push(`${w}配分加總 ${sum} 分與總分 ${q.總分} 分不一致，已以加總為準。`);
+      q.總分 = sum;
+
+      q.延伸問題 = toArr(q.延伸問題).map(normalizeMath);
+      if (q.延伸問題.length > 3){ warns.push(`${w}延伸問題多於 3 題，僅取前 3 題。`); q.延伸問題 = q.延伸問題.slice(0,3); }
+      else if (q.延伸問題.length < 3) warns.push(`${w}延伸問題只有 ${q.延伸問題.length} 題（規格為 3 題）。`);
+    });
+    t.題目.sort((x, y) => DIFF.indexOf(x.難度) - DIFF.indexOf(y.難度));
+  });
+
+  if (total > LIMITS.題) errors.push(`本次共 ${total} 題，超過單本上限 ${LIMITS.題} 題。建議分成 ${Math.ceil(total/LIMITS.題)} 本。`);
+  else if (total > LIMITS.題軟) warns.push(`本次 ${total} 題，超過建議值 ${LIMITS.題軟} 題，冊子會較厚。`);
+  return { errors, warns, model, total };
+}
+
+function missingChars(model){
+  if (!COVERAGE_RANGES.length) return null;
+  const set = new Set();
+  const walk = v => {
+    if (typeof v === 'string'){ for (const ch of v){ const cp = ch.codePointAt(0);
+      if (cp > 0x2e80 && !COVERAGE_RANGES.some(([a,b]) => cp >= a && cp <= b)) set.add(ch); } }
+    else if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') Object.values(v).forEach(walk);
+  };
+  walk(model); return [...set];
+}
+
+/* ============================================================ 版面 CSS */
+function bookCss(){
+  const compact = $('#mode_compact').checked;
+  const kaiFirst = $('#useLocalKai').checked;
+  const family = kaiFirst
+    ? `"標楷體","DFKai-SB","${HK_FONT}","Noto Serif HK","Noto Serif TC",serif`
+    : `"${HK_FONT}","標楷體","DFKai-SB","Noto Serif HK","Noto Serif TC",serif`;
+  const insTouch = IS_TOUCH ? `.ins > button{opacity:1;padding:5px 10px;font-size:10pt}` : '';
+  return `
+@page{
+  size:A4; margin:2cm;
+  @top-left{ content:"專屬錯題更正小冊子"; font-size:9pt; color:#444 }
+  @top-right{ content:counter(page); font-size:9pt; color:#444 }
+}
+@page:first{ @top-left{content:""} @top-right{content:""} }
+.book{ font-family:${family}; font-size:12pt; line-height:1.75; color:#111;
+  print-color-adjust:exact; -webkit-print-color-adjust:exact }
+.pagedjs_page{ position:relative }
+body.is-dirty .pagedjs_page .pagedjs_page_content::after{
+  content:"草稿：尚未重新分頁"; position:absolute; top:45%; left:0; right:0; text-align:center;
+  font-size:34pt; color:rgba(0,0,0,.10); transform:rotate(-22deg); pointer-events:none }
+
+.brk{ break-before:page }
+.mbrk{ break-after:page; height:0 }
+.ins{ height:0; position:relative; z-index:5 }
+.ins > button{ position:absolute; right:0; top:-12px; font-size:8.5pt; line-height:1.2; padding:1px 6px;
+  border:1px dashed #1c4e80; background:#fff; color:#1c4e80; border-radius:3px; opacity:.3; cursor:pointer }
+.ins:hover > button{ opacity:1 }
+.ins.on > button{ opacity:1; border-style:solid; background:#eef3fb; font-weight:700 }
+.ins.hide{ display:none }
+${insTouch}
+
+.cover{ text-align:center; break-after:page }
+.cover .t1{ font-size:26pt; font-weight:700; margin-top:3.2cm }
+.cover .t2{ font-size:15pt; margin-top:.6cm; letter-spacing:.05em }
+.cover .fields{ margin-top:2.4cm; font-size:13pt; text-align:left; width:11cm; margin-left:auto; margin-right:auto }
+.cover .fields div{ margin:.42cm 0; border-bottom:1px solid #444; padding-bottom:2px }
+.cover .fields span.k{ display:inline-block; width:2.8cm; color:#333 }
+.cover .sign{ margin-top:1.2cm; width:11cm; margin-left:auto; margin-right:auto; text-align:left; font-size:12pt }
+.cover .sign div{ margin:.9cm 0; border-bottom:1px solid #444; padding-bottom:2px }
+.cover .made{ position:absolute; bottom:1.2cm; left:0; right:0; font-size:8pt; color:#777 }
+.cover .quote{ margin-top:2.2cm; font-size:10pt; color:#555; font-style:italic }
+
+.toc{ break-after:page }
+.toc h2{ font-size:16pt; border-bottom:2px solid #1c4e80; padding-bottom:4px }
+.toc ol{ list-style:none; padding:0; margin:.6cm 0 0 }
+.toc li{ margin:.22cm 0; font-size:12pt }
+.toc li.sub{ margin-left:1cm; font-size:11pt; color:#333 }
+.toc a{ text-decoration:none; color:#111 }
+.toc a::after{ content:leader('.') target-counter(attr(href), page); color:#555 }
+
+h1.topic{ font-size:16pt; color:#1c4e80; border-bottom:2px solid #1c4e80; padding-bottom:4px; margin:0 0 .4cm; break-after:avoid }
+h2.qhead{ font-size:13pt; margin:.5cm 0 .25cm; break-after:avoid }
+h2.qhead .badge{ font-size:9pt; border:1px solid #1c4e80; color:#1c4e80; border-radius:3px; padding:1px 6px; margin-left:6px }
+h3.sec{ font-size:12pt; margin:.42cm 0 .18cm; break-after:avoid }
+.question{ ${compact ? '' : 'break-after:page;'} }
+.question:last-of-type{ break-after:auto }
+.q-box{ border:2px solid #1c4e80; background:#eef3fb; border-radius:4px; padding:.32cm .42cm; margin:.22cm 0 .3cm;
+  break-inside:avoid; print-color-adjust:exact; -webkit-print-color-adjust:exact }
+.q-box.allow-break{ break-inside:auto }
+.q-box .cap{ display:block; font-size:9.5pt; font-weight:700; color:#1c4e80; margin-bottom:.14cm }
+.q-box .cont-note{ font-size:9pt; color:#1c4e80 }
+ul.analysis{ margin:.1cm 0 .1cm 1em; padding:0 }
+ul.analysis li{ margin:.14cm 0 }
+ol.steps{ margin:.1cm 0 .1cm 1.3em; padding:0 }
+ol.steps li{ margin:.16cm 0 }
+ol.steps .pts{ color:#8a3b00; font-size:10pt; white-space:nowrap }
+.total{ font-weight:700; margin:.24cm 0 0; font-size:11.5pt }
+ol.ext{ margin:.1cm 0 .1cm 1.3em; padding:0 }
+ol.ext li{ margin:.16cm 0 }
+[data-path]{ outline:none }
+[data-path]:hover{ background:rgba(28,78,128,.06) }
+.katex{ font-size:1em }
+`;
+}
+
+/* ============================================================ 手動分頁 */
+function isBreakOn(slot){
+  const [path, name] = slot.split('::');
+  const node = getPath(MODEL, path);
+  if (!node) return false;
+  return name ? (node.分頁點 || []).includes(name) : !!node.分頁前;
+}
+function toggleBreak(slot){
+  const [path, name] = slot.split('::');
+  const node = getPath(MODEL, path);
+  if (!node) return;
+  if (name){
+    node.分頁點 = node.分頁點 || [];
+    const i = node.分頁點.indexOf(name);
+    if (i >= 0) node.分頁點.splice(i, 1); else node.分頁點.push(name);
+  } else node.分頁前 = !node.分頁前;
+}
+function clearAllBreaks(){
+  if (!MODEL) return 0;
+  let n = 0;
+  MODEL.主題.forEach(t => {
+    if (t.分頁前){ t.分頁前 = false; n++; }
+    t.題目.forEach(q => {
+      if (q.分頁前){ q.分頁前 = false; n++; }
+      if (q.分頁點 && q.分頁點.length){ n += q.分頁點.length; q.分頁點 = []; }
+    });
+  });
+  return n;
+}
+function countBreaks(){
+  if (!MODEL) return 0;
+  let n = 0;
+  MODEL.主題.forEach(t => { if (t.分頁前) n++; t.題目.forEach(q => { if (q.分頁前) n++; n += (q.分頁點 || []).length; }); });
+  return n;
+}
+
+/* ============================================================ 來源 DOM */
+function inlineDisplaystyle(s){
+  return String(s ?? '').replace(/(^|[^$])\$([^$]+)\$/g, (m, pre, body) =>
+    pre + '$' + (/^\s*\\displaystyle/.test(body) ? body : '\\displaystyle ' + body) + '$');
+}
+const hasMath = s => /\$/.test(String(s ?? ''));
+function field(text, path){
+  return `<span data-path="${path}" data-hasmath="${hasMath(text) ? '1' : '0'}">${esc(inlineDisplaystyle(text))}</span>`;
+}
+function ins(slot, label){
+  const on = isBreakOn(slot);
+  return `<div class="ins${on ? ' on' : ''}${showIns ? '' : ' hide'}" data-slot="${slot}"><button type="button">${
+    on ? '✂ 已分頁（點擊取消）' : '⤓ 在此分頁' + (label ? '（' + label + '）' : '')}</button></div>`
+    + (on ? '<div class="mbrk"></div>' : '');
+}
+
+function buildSource(model){
+  const compact = $('#mode_compact').checked;
+  const m = model.meta;
+  const today = new Date().toISOString().slice(0,10);
+  const F = (k, v) => `<div><span class="k">${k}：</span>${esc(v || '')}</div>`;
+
+  let cover = '';
+  if (!compact){
+    cover = `<section class="cover">
+      <div class="t1">個人專屬錯題更正小冊子</div>
+      <div class="t2">Error Correction Booklet</div>
+      <div class="fields">
+        ${F('學校', m.學校名稱)}${F('班別', m.班別)}
+        ${$('#adv_id').checked ? F('學號', m.學號) : ''}
+        ${F('姓名', m.學生姓名)}${F('科目', m.科目)}
+        ${$('#adv_unit').checked ? F('課題', m.課題) : ''}
+        ${$('#adv_assess').checked ? F('評估', m.評估名稱) : ''}
+        ${F('授課老師', m.授課老師)}${F('日期', m.日期 || today)}
+      </div>
+      ${$('#adv_parent').checked ? `<div class="sign"><div>家長簽署：</div><div>簽署日期：</div></div>` : ''}
+      <div class="quote">「錯誤是學習的必經之路，訂正是通往成功的階梯。」</div>
+      <div class="made">本工具製作：Gu Richard Run Feng</div>
+    </section>`;
+  }
+
+  let toc = '';
+  if (!compact){
+    let items = '';
+    model.主題.forEach((t, ti) => {
+      items += `<li><a href="#t${ti}">${esc(t.主題名稱)}</a></li>`;
+      t.題目.forEach((q, qi) => {
+        items += `<li class="sub"><a href="#t${ti}q${qi}">${esc(q.難度)}：${esc(String(q.原題目).replace(/\$[^$]*\$/g,'…').slice(0,22))}</a></li>`;
+      });
+    });
+    toc = `<section class="toc"><h2>目錄</h2><ol>${items}</ol></section>`;
+  }
+
+  let body = '';
+  model.主題.forEach((t, ti) => {
+    const tPath = `主題[${ti}]`;
+    body += ins(`${tPath}`, '主題前');
+    body += `<h1 class="topic${t.分頁前 ? ' brk' : ''}" id="t${ti}">${esc(t.主題名稱)}</h1>`;
+    t.題目.forEach((q, qi) => {
+      const p = `${tPath}.題目[${qi}]`;
+      const steps = q.正確步驟.map((st, si) =>
+        `<li>${field(st.說明, `${p}.正確步驟[${si}].說明`)} <span class="pts">（給予 ${st.配分} 分）</span></li>`).join('');
+      const analysis = q.錯誤分析.map((aa, ai) =>
+        `<li><b>學生作答盲點</b>：${field(aa, `${p}.錯誤分析[${ai}]`)}</li>`).join('');
+      const ext = q.延伸問題.map((ee, ei) =>
+        `<li>${field(ee, `${p}.延伸問題[${ei}]`)}</li>`).join('');
+
+      body += ins(`${p}`, '題目前');
+      body += `<section class="question${q.分頁前 ? ' brk' : ''}" id="t${ti}q${qi}">
+        <h2 class="qhead">第 ${qi+1} 題<span class="badge">${esc(q.難度)}</span></h2>
+        <div class="q-box"><span class="cap">原題目</span>${field(q.原題目, `${p}.原題目`)}</div>
+        ${ins(`${p}::原題目`)}
+        <h3 class="sec">1. 錯誤分析</h3><ul class="analysis">${analysis}</ul>
+        ${ins(`${p}::錯誤分析`)}
+        <h3 class="sec">2. 正確步驟與評分標準</h3><ol class="steps">${steps}</ol>
+        ${ins(`${p}::步驟`)}
+        <p class="total">本題總分：${q.總分} 分</p>
+        ${ins(`${p}::總分`)}
+        <div class="q-box"><span class="cap">3. 延伸問題</span><ol class="ext">${ext}</ol></div>
+        ${ins(`${p}::延伸問題`)}
+      </section>`;
+    });
+  });
+  return `<div class="book">${cover}${toc}${body}</div>`;
+}
+
+function markOversizedBoxes(root){
+  const PX_CM = 37.8, usable = (29.7 - 4) * PX_CM * 0.9;
+  let n = 0;
+  root.querySelectorAll('.q-box').forEach(box => {
+    if (box.getBoundingClientRect().height > usable){
+      box.classList.add('allow-break');
+      const note = document.createElement('div');
+      note.className = 'cont-note'; note.textContent = '（本框內容較長，將跨頁續接）';
+      box.appendChild(note); n++;
+    }
+  });
+  return n;
+}
+
+/* ============================================================ 分頁 */
+async function paginate(){
+  if (!MODEL) return;
+  setState('paginating');
+  const src = $('#source');
+  src.innerHTML = buildSource(MODEL);
+  Object.assign(src.style, { display:'block', position:'absolute', left:'-99999px', width:'17cm' });
+  src.style.fontFamily = $('#useLocalKai').checked
+    ? `"標楷體","DFKai-SB","${HK_FONT}",serif` : `"${HK_FONT}","標楷體","DFKai-SB",serif`;
+
+  if (window.renderMathInElement){
+    renderMathInElement(src, {
+      delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+      throwOnError:false, errorColor:'#9b1c1c', strict:'ignore'
+    });
+  }
+  const fs = await waitFonts(src);
+  reportFontState(fs);
+  if (fs === 'fallback') msg('w','港標楷書尚未載入，本次以系統字型分頁，字形與行距可能與最終版不同。');
+
+  const over = markOversizedBoxes(src);
+  if (over) msg('i', `已自動將 ${over} 個過高的方框設為可跨頁並加註「續接」說明。`);
+
+  const t0 = performance.now();
+  $('#preview').innerHTML = '';
+  $('#preview').style.transform = 'none';
+  if (lastCssUrl) URL.revokeObjectURL(lastCssUrl);
+  lastCssUrl = URL.createObjectURL(new Blob([bookCss()], { type:'text/css' }));
+
+  previewer = new Paged.Previewer();
+  const flow = await previewer.preview(src.innerHTML, [lastCssUrl], $('#preview'));
+  src.style.display = 'none';
+
+  const ms = Math.round(performance.now() - t0);
+  const budget = flow.total <= 10 ? 2000 : (flow.total <= 30 ? 6000 : Infinity);
+  const manual = countBreaks();
+  msg('i', `分頁完成：共 <b>${flow.total}</b> 頁，耗時 ${ms} ms${ms > budget ? '（較慢，行動裝置屬正常）' : ''}${manual ? `，含 ${manual} 處手動分頁` : ''}。`);
+
+  attachEditors($('#preview'));
+  setState('clean');
+  requestAnimationFrame(fitPreview);
+  if (window.matchMedia('(max-width:900px)').matches) showTab('preview');
+}
+
+/* ============================================================ 路徑存取 */
+function getPath(obj, path){
+  return path.split('.').reduce((o, seg) => {
+    const m = seg.match(/^(.+?)\[(\d+)\]$/);
+    return m ? o?.[m[1]]?.[+m[2]] : o?.[seg];
+  }, obj);
+}
+function setPath(obj, path, val){
+  const segs = path.split('.'); const last = segs.pop();
+  const parent = segs.reduce((o, seg) => {
+    const m = seg.match(/^(.+?)\[(\d+)\]$/);
+    return m ? o[m[1]][+m[2]] : o[seg];
+  }, obj);
+  const m = last.match(/^(.+?)\[(\d+)\]$/);
+  if (m) parent[m[1]][+m[2]] = val; else parent[last] = val;
+}
+
+/* ============================================================ 編輯 */
+function attachEditors(root){
+  root.querySelectorAll('.ins').forEach(bar => {
+    bar.querySelector('button').addEventListener('click', async ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      toggleBreak(bar.dataset.slot);
+      await paginate();
+    });
+  });
+  root.querySelectorAll('[data-path]').forEach(el => {
+    el.addEventListener('paste', ev => {
+      ev.preventDefault();
+      document.execCommand('insertText', false, (ev.clipboardData || window.clipboardData).getData('text'));
+    });
+    if (el.dataset.hasmath === '1' || IS_TOUCH){
+      /* 觸控裝置一律用彈出編輯框：直接在頁面上打字在手機極易誤觸與跳動 */
+      el.title = '點擊以編輯這一段';
+      el.style.cursor = 'text';
+      el.addEventListener('click', () => openRawEditor(el));
+    } else {
+      el.contentEditable = 'true';
+      el.addEventListener('input', () => { setPath(MODEL, el.dataset.path, el.textContent); setState('dirty'); });
+    }
+  });
+  root.querySelectorAll('.katex').forEach(k => k.setAttribute('contenteditable','false'));
+}
+
+function openRawEditor(el){
+  const path = el.dataset.path;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:9999;padding:12px';
+  wrap.innerHTML = `<div style="background:#fff;padding:14px;border-radius:10px;width:min(640px,96vw)">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">編輯這一段</div>
+      <div style="font-size:11px;color:#6b7684;margin-bottom:8px">公式請保留 $…$ 寫法，例如 $3x+5=20$</div>
+      <textarea style="width:100%;height:160px;font-family:ui-monospace,monospace;font-size:16px;padding:8px;border:1px solid #d7dce3;border-radius:6px"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+        <button data-x="c">取消</button><button data-x="s" style="background:#1c4e80;color:#fff;border-color:#1c4e80;font-weight:700">儲存</button>
+      </div></div>`;
+  document.body.appendChild(wrap);
+  const ta = wrap.querySelector('textarea'); ta.value = getPath(MODEL, path); ta.focus();
+  wrap.querySelector('[data-x="c"]').onclick = () => wrap.remove();
+  wrap.querySelector('[data-x="s"]').onclick = () => {
+    setPath(MODEL, path, ta.value);
+    el.innerHTML = esc(inlineDisplaystyle(ta.value));
+    if (window.renderMathInElement){
+      renderMathInElement(el, { delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+        throwOnError:false, errorColor:'#9b1c1c', strict:'ignore' });
+      el.querySelectorAll('.katex').forEach(k => k.setAttribute('contenteditable','false'));
+    }
+    wrap.remove(); setState('dirty');
+  };
+}
+
+/* ============================================================ 載入 */
+function syncMetaFromInputs(){
+  if (!MODEL) return;
+  document.querySelectorAll('[data-meta]').forEach(i => { MODEL.meta[i.dataset.meta] = i.value; });
+}
+function syncInputsFromMeta(){
+  const m = MODEL.meta || {};
+  document.querySelectorAll('[data-meta]').forEach(i => { i.value = m[i.dataset.meta] || ''; });
+  if (!$('#m_date').value) $('#m_date').value = new Date().toISOString().slice(0,10);
+}
+function splitBatches(model, size){
+  const flat = [];
+  model.主題.forEach(t => t.題目.forEach(q => flat.push({ 主題名稱:t.主題名稱, q })));
+  const out = [];
+  for (let i = 0; i < flat.length; i += size){
+    const slice = flat.slice(i, i + size), topics = [];
+    slice.forEach(({主題名稱, q}) => {
+      let t = topics.find(x => x.主題名稱 === 主題名稱);
+      if (!t){ t = { 主題名稱, 題目:[] }; topics.push(t); }
+      t.題目.push(q);
+    });
+    out.push({ meta: { ...model.meta }, 主題: topics });
+  }
+  return out;
+}
+
+async function load(text){
+  clearMsg();
+  if (!text.trim()){ msg('e','請先貼上 JSON。'); return; }
+  const { parsed, log } = repairJson(text);
+  if (!parsed){
+    msg('e','無法解析這段 JSON。常見原因：只複製了一半、缺少收尾括號。請回 AI 重新輸出完整 JSON。');
+    return;
+  }
+  if (log.length) msg('i', `<b>修復報告</b>（已自動修正 ${log.length} 項格式問題）<br>` + log.map(x => '· ' + x).join('<br>'));
+
+  const { errors, warns, model, total } = validate(parsed);
+  warns.forEach(w => msg('w', w));
+
+  if (errors.length){
+    errors.forEach(e => {
+      const d = msg('e', e);
+      const b = document.createElement('button');
+      b.textContent = '複製修正指令';
+      b.onclick = () => copyText(
+        `你剛才輸出的錯題小冊子 JSON 有以下問題：${e}\n請只重新輸出受影響的題目 JSON 物件，保持欄位名稱不變，只輸出 JSON、不要程式碼圍籬、字串內反斜線雙寫。`,
+        '已複製修正指令，貼回 AI 即可。');
+      d.appendChild(b);
+    });
+    if (total > LIMITS.題){
+      const d = msg('e', `已停止排版。可按下方按鈕自動分批（每本 ${LIMITS.題} 題）。`);
+      splitBatches(model, LIMITS.題).forEach((batch, i, arr) => {
+        const b = document.createElement('button');
+        b.textContent = `載入第 ${i+1}／${arr.length} 本`;
+        b.onclick = () => { MODEL = batch; syncInputsFromMeta(); clearMsg(); paginate(); };
+        d.appendChild(b);
+      });
+    }
+    return;
+  }
+
+  MODEL = model;
+  syncInputsFromMeta();
+  const miss = missingChars(MODEL);
+  if (miss && miss.length) msg('w', `以下 ${miss.length} 個字不在字型範圍：${miss.join('、')}（會以另一種字體顯示）`);
+  await paginate();
+}
+
+/* ============================================================ 列印 */
+function doPrint(){
+  if (state === 'dirty'){
+    const d = msg('w','內容已修改，需重新分頁後再列印。');
+    const b = document.createElement('button');
+    b.textContent = '重新分頁並列印';
+    b.onclick = async () => { await paginate(); printNow(); };
+    d.appendChild(b); d.scrollIntoView({ behavior:'smooth' });
+    if (window.matchMedia('(max-width:900px)').matches) showTab('panel');
+    return;
+  }
+  printNow();
+}
+function printNow(){
+  const pv = $('#preview'), wrap = $('#previewWrap');
+  const t = pv.style.transform, h = wrap.style.height;
+  pv.style.transform = 'none'; wrap.style.height = 'auto';   /* 螢幕縮放不可帶入 PDF */
+  const restore = () => { pv.style.transform = t; wrap.style.height = h; };
+  window.addEventListener('afterprint', restore, { once:true });
+  setTimeout(() => { window.print(); setTimeout(restore, 1500); }, 60);
+}
+
+window.addEventListener('keydown', ev => {
+  if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'p' || ev.key === 'P')){
+    if (document.body.classList.contains('calib-mode')) return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+    doPrint();
+  }
+}, true);
+
+window.addEventListener('beforeunload', ev => { if (state === 'dirty'){ ev.preventDefault(); ev.returnValue = ''; } });
+
+const DRAFT = 'ecb-draft-v1';
+function saveDraft(){
+  try { syncMetaFromInputs(); localStorage.setItem(DRAFT, JSON.stringify(MODEL)); } catch(_){}
+}
+
+/* ============================================================ 事件 */
+$('#btnLoad').onclick = () => load($('#jsonInput').value);
+$('#btnPrint').onclick = doPrint;
+$('#btnRepaginate').onclick = () => { syncMetaFromInputs(); paginate(); };
+$('#btnCalib').onclick = () => {
+  document.body.classList.add('calib-mode');
+  setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('calib-mode'), 1500); }, 60);
+};
+$('#btnShowIns').onclick = () => {
+  showIns = !showIns;
+  document.querySelectorAll('.ins').forEach(b => b.classList.toggle('hide', !showIns));
+  msg('i', showIns ? '已顯示分頁按鈕。' : '已隱藏分頁按鈕（已設定的分頁仍有效）。');
+};
+$('#btnClearIns').onclick = async () => {
+  const n = clearAllBreaks();
+  if (!n){ msg('i','目前沒有手動分頁。'); return; }
+  msg('i', `已清除 ${n} 處手動分頁。`); await paginate();
+};
+$('#btnDownload').onclick = () => {
+  if (!MODEL) return; syncMetaFromInputs();
+  const blob = new Blob([JSON.stringify(MODEL, null, 2)], { type:'application/json' });
+  const name = `錯題小冊子_${(MODEL.meta.科目||'科目')}_${new Date().toISOString().slice(0,10)}.json`;
+  if (IS_IOS && navigator.share && navigator.canShare?.({ files:[new File([blob], name)] })){
+    navigator.share({ files:[new File([blob], name, { type:'application/json' })], title:name })
+      .catch(() => {});                     /* iPhone 用分享表單存到「檔案」 */
+  } else {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  }
+  saveDraft();
+};
+$('#btnCopy').onclick = () => {
+  if (!MODEL) return; syncMetaFromInputs();
+  copyText(JSON.stringify(MODEL, null, 2), '已複製 JSON（含手動分頁設定）。');
+};
+$('#btnPromptClaude').onclick = () => copyText(raw('prompt-claude'), '已複製 <b>Claude 版</b> Prompt。');
+$('#btnPromptGemini').onclick = () => copyText(raw('prompt-gemini'), '已複製 <b>Gemini 版</b> Prompt。');
+$('#btnSample').onclick = () => { const s = raw('sample-json'); $('#jsonInput').value = s; load(s); };
+
+$('#useLocalKai').addEventListener('change', () => {
+  $('#glyphTest').style.fontFamily = $('#useLocalKai').checked
+    ? `"標楷體","DFKai-SB",serif` : `"${HK_FONT}","標楷體",serif`;
+  if (MODEL){ syncMetaFromInputs(); paginate(); }
+});
+['#mode_full','#mode_compact','#adv_id','#adv_unit','#adv_assess','#adv_parent']
+  .forEach(s => $(s).addEventListener('change', () => { if (MODEL){ syncMetaFromInputs(); paginate(); } }));
+document.querySelectorAll('[data-meta]').forEach(i =>
+  i.addEventListener('input', () => { if (MODEL){ MODEL.meta[i.dataset.meta] = i.value; setState('dirty'); } }));
+
+window.addEventListener('load', async () => {
+  $('#m_date').value = new Date().toISOString().slice(0,10);
+  setState('clean'); $('#statusText').textContent = '尚未載入資料';
+  if (IS_IOS){ $('#hintChrome').style.display = 'none'; $('#hintIOS').style.display = 'block'; }
+  $('#appSub').textContent = IS_IOS ? '港標楷體 · iPhone／iPad 模式' : '港標楷體 · 繁體中文 · 桌面 Chrome';
+  reportFontState(await waitFonts($('#glyphTest')));
+});
+</script>
+</body>
+</html>
